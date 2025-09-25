@@ -1,21 +1,25 @@
 import Link from 'next/link';
+import Logo from './Logo';
+import { Button } from './Button';
 
 const Header = () => {
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-md">
+    <header className="bg-card shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="text-xl font-bold">
-          IGCSE Prep
+        <Link href="/">
+          <Logo />
         </Link>
-        <nav>
-          <ul className="flex space-x-4">
-            <li><Link href="/chatbot" className="hover:text-gray-500">Chatbot Tutor</Link></li>
-            <li><Link href="/mock-exam" className="hover:text-gray-500">Mock Exams</Link></li>
-            <li><Link href="/flashcards" className="hover:text-gray-500">Flashcards</Link></li>
-            <li><Link href="/level-test" className="hover:text-gray-500">Level Test</Link></li>
-            <li><Link href="/question-bank" className="hover:text-gray-500">Question Bank</Link></li>
-          </ul>
+        <nav className="hidden md:flex items-center space-x-4">
+          <Link href="/chatbot" className="text-muted-foreground hover:text-primary">Chatbot Tutor</Link>
+          <Link href="/mock-exam" className="text-muted-foreground hover:text-primary">Mock Exams</Link>
+          <Link href="/flashcards" className="text-muted-foreground hover:text-primary">Flashcards</Link>
+          <Link href="/level-test" className="text-muted-foreground hover:text-primary">Level Test</Link>
+          <Link href="/question-bank" className="text-muted-foreground hover:text-primary">Question Bank</Link>
         </nav>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost">Login</Button>
+          <Button>Sign Up</Button>
+        </div>
       </div>
     </header>
   );
