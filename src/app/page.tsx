@@ -86,7 +86,7 @@ export default function LandingPage() {
       <main>
         <div className="relative">
           <div className="sticky top-0 grid h-[60vh] place-items-center text-center">
-            <div className="container" style={heroStyle}>
+            <div className="container px-4" style={heroStyle}>
               <h1 className="text-5xl font-bold max-w-3xl mx-auto">Exam-specific revision,<br />made by trusted examiners</h1>
               <p className="text-muted">Real expertise. Real results. On average, our resources help students go up 2 grades.</p>
               <div className="mt-4 flex flex-col items-center gap-3">
@@ -100,7 +100,7 @@ export default function LandingPage() {
           </div>
 
           <div className="relative z-10 bg-[#f3f4f4]">
-            <div className="container mx-auto max-w-[1300px] py-12">
+            <div className="container mx-auto max-w-[1300px] py-12 px-4">
               <nav ref={featureNavRef} className="relative mx-auto flex max-w-md justify-center rounded-full bg-gray-200/70 p-1">
                 {featureTabsData.map(tab => (
                   <button
@@ -130,7 +130,7 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            <div className="container mx-auto max-w-[1300px] py-16">
+            <div className="container mx-auto max-w-[1300px] py-16 px-4">
               <h2 className="text-2xl font-bold">Why it works</h2>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="card rounded-xl border border-border bg-panel p-6 shadow-sm">
@@ -155,7 +155,7 @@ export default function LandingPage() {
 
         <section className="border-y-2 border-border bg-[#f7f4f4] py-16">
             <h2 className="text-center text-2xl font-bold">What are you studying?</h2>
-            <div className="mx-auto mt-8 grid max-w-[1300px] grid-cols-1 items-stretch border-y-2 border-border md:grid-cols-2">
+            <div className="mx-auto mt-8 grid max-w-[1300px] grid-cols-1 items-stretch border-x-0 border-y-2 border-border md:border-x-2 md:grid-cols-2">
                 <div className="relative min-h-[450px] overflow-hidden">
                     {accordionData.map((item, index) => (
                         <Image key={index} src={item.image} alt="Curriculum feature image" fill style={{objectFit: 'cover'}} className={`transition-opacity duration-1000 ${accordionImage === item.image ? 'opacity-100' : 'opacity-0'}`} />
@@ -178,7 +178,7 @@ export default function LandingPage() {
         </section>
 
         <section className="bg-panel py-12">
-            <div className="container mx-auto max-w-[1300px]">
+            <div className="container mx-auto max-w-[1300px] px-4">
                 <h2 className="text-center text-5xl font-bold">Our Features</h2>
                 <div className="mt-12 grid min-h-[400px] grid-cols-1 border border-border md:grid-cols-3">
                     {/* Feature Box: Tutor */}
