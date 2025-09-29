@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Chatbot Tutor{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">{% endblock %}
+{% block content %}
+<div class="chatbot-page-container gemini-style">
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+        <div id="chat-container">
+            <!-- Gemini-style Welcome Screen -->
+            <div id="chat-welcome-screen">
+                <div class="welcome-header">
+                    <h1 class="gradient-text">Hello, {{ current_user.username }}</h1>
+                    <h2>How can I help you today?</h2>
+                </div>
+                <div class="prompt-suggestions">
+                    <div class="suggestion-card" onclick="startWithPrompt('Explain Brownian motion')">
+                        <p>Explain Brownian motion</p>
+                        <div class="card-icon">🔬</div>
+                    </div>
+                    <div class="suggestion-card" onclick="startWithPrompt('What are the main themes in \'To Kill a Mockingbird\'?')">
+                        <p>Analyze themes in "To Kill a Mockingbird"</p>
+                        <div class="card-icon">📚</div>
+                    </div>
+                    <div class="suggestion-card" onclick="startWithPrompt('Help me solve this quadratic equation: x^2 - 5x + 6 = 0')">
+                        <p>Solve a quadratic equation</p>
+                        <div class="card-icon">🧮</div>
+                    </div>
+                    <div class="suggestion-card" onclick="startWithPrompt('Summarize the process of photosynthesis')">
+                        <p>Summarize photosynthesis</p>
+                        <div class="card-icon">🌿</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-messages">
+                <!-- Chat messages will be appended here by JavaScript -->
+            </div>
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Enter a prompt here" autocomplete="off">
+                <button type="submit" id="send-button" title="Send message">➤</button>
+            </form>
+        </div>
+    </main>
+</div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const welcomeScreen = document.getElementById('chat-welcome-screen');
+        let conversationHistory = []; // Array to store the conversation
+
+        /**
+         * Appends a new message to the chat container and handles rendering.
+         */
+        function appendMessage(sender, text) {
+            // Hide welcome screen on first message
+            if (welcomeScreen.style.display !== 'none') {
+                welcomeScreen.style.display = 'none';
+            }
+
+            // Add message to history
+            conversationHistory.push({ role: (sender === 'bot' ? 'assistant' : 'user'), content: text });
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            if (sender === 'bot') {
+                const avatar = '<div class="bot-avatar">✨</div>';
+                // Use marked.js to parse markdown for bot messages
+                messageElement.innerHTML = avatar + '<div class="message-content">' + marked.parse(text) + '</div>'; 
+            } else {
+                const avatar = '<div class="user-avatar">{{ current_user.username[0] | upper }}</div>';
+                // For user messages, display plain text only
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = text;
+                messageElement.innerHTML = avatar;
+                messageElement.appendChild(messageContent);
+            }
+
+            messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            chatMessages.appendChild(messageElement);
+
+            // After appending, tell KaTeX to render math expressions
+            if (sender === 'bot') {
+                renderMathInElement(messageElement, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ]
+                });
+            }
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function startWithPrompt(prompt) {
+            chatInput.value = prompt;
+            sendMessage();
+        }
+
+        // --- Form Submission Logic ---
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            appendMessage('user', message); // This now correctly adds to history and DOM
+            chatInput.value = '';
+
+            try {
+                const response = await fetch("{{ url_for('chat') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ messages: conversationHistory })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get response from chatbot');
+                }
+
+                const data = await response.json();
+                appendMessage('bot', data.reply);
+
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('bot', 'Sorry, something went wrong. Please try again.');
+            }
+        }
+    </script>
+{% endblock %}

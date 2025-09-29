@@ -1,0 +1,1057 @@
+{% extends 'base.html' %}
+
+{% block title %}Flashcards System{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='flashcards.css') }}">{% endblock %}
+
+{% block content %}
+<div class="flashcards-layout">
+    <aside class="flashcards-sidebar">
+        <div class="sidebar-header">
+            <h3>My Collection</h3>
+            <button class="btn btn-ghost btn-sm" id="new-folder-btn">+ New Folder</button>
+        </div>
+        <div id="folder-tree">
+        </div>
+    </aside>
+
+    <main class="flashcards-main">
+        <div class="flashcards-main-header">
+            <div class="header-title-container">
+                <h1 id="current-folder-name">All Flashcards</h1>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" id="cancel-selection-btn" style="display: none;">Cancel Selection</button>
+                <button class="btn btn-secondary" id="new-flashcard-btn">Create Flashcard</button>
+                <button class="btn btn-primary" id="learn-mode-btn">Learn</button>
+            </div>
+        </div>
+
+        <!-- Mobile-only view switcher -->
+        <div class="mobile-view-switcher">
+            <button class="view-switch-btn active" data-view="items">Items</button>
+            <button class="view-switch-btn" data-view="folders">My Collection</button>
+        </div>
+
+        <nav id="breadcrumbs" aria-label="breadcrumb"></nav>
+
+        <div id="items-container" class="items-grid">
+        </div>
+    </main>
+</div>
+
+<!-- Mobile Floating Action Button -->
+<div class="fab-container">
+    <div class="fab-actions">
+        <button id="fab-new-folder" class="fab-action-btn" title="New Folder">📁</button>
+        <button id="fab-new-flashcard" class="fab-action-btn" title="New Flashcard">📄</button>
+    </div>
+    <button id="mobile-add-btn" class="fab" title="Create"><span>+</span></button>
+</div>
+
+<!-- Mobile Sticky Learn Button -->
+<div class="mobile-bottom-actions">
+    <button class="btn btn-primary" id="mobile-learn-btn">Learn</button>
+</div>
+
+<!-- Bulk Action Bar -->
+<div id="bulk-action-bar" class="bulk-action-bar">
+    <span id="selection-count" class="selection-count">0 items selected</span>
+    <div class="actions">
+        <button class="btn btn-secondary btn-sm" id="bulk-move-btn">Move</button>
+        <button class="btn btn-danger btn-sm" id="bulk-delete-btn">Delete</button>
+        <button class="btn btn-ghost btn-sm" id="bulk-cancel-btn">Cancel</button>
+    </div>
+</div>
+
+<div id="select-learn-folders-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Select folders to learn</h3>
+        <div id="select-learn-folders-tree" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="cancel-learn-selection-btn">Cancel</button>
+            <button class="btn btn-primary" id="start-learn-session-btn">Start Learning</button>
+        </div>
+    </div>
+</div>
+
+<div id="learn-mode-modal" class="modal-overlay">
+    <div class="learn-modal-content">
+        <button class="modal-close-btn" id="close-learn-modal">&times;</button>
+        <div class="learn-flashcard" onclick="this.parentElement.classList.toggle('flipped')">
+            <div class="learn-flashcard-inner">
+                <div class="learn-flashcard-front">
+                    <p id="learn-question"></p>
+                </div>
+                <div class="learn-flashcard-back">
+                    <p id="learn-answer"></p>
+                </div>
+            </div>
+        </div>
+        <div id="learn-controls">
+            <div id="learn-progress">1 / 10</div>
+            <div id="learn-feedback-btns" style="display: none;">
+                <button id="learn-wrong-btn" class="btn btn-danger">I was wrong</button>
+                <button id="learn-right-btn" class="btn btn-success">I was right</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="create-flashcard-modal" class="modal-overlay">
+    <div class="modal-content creator-modal-content">
+        <button class="modal-close-btn" id="close-create-modal">&times;</button>
+        <div class="creator-tabs">
+            <button class="tab-link active" data-tab="generate-ai">Generate with AI</button>
+            <button class="tab-link" data-tab="create-manual">Create Manually</button>
+        </div>
+
+        <div id="generate-ai" class="tab-content" style="display: block;">
+            <form id="ai-generator-form">
+                <p class="muted" style="font-size: 0.9rem; margin-bottom: 1rem;">Enter a topic or paste your notes, and the AI will generate flashcards for you.</p>
+                <div class="form-group">
+                    <label for="ai-topic">Topic</label>
+                    <input type="text" id="ai-topic" class="form-control" placeholder="e.g., The Krebs Cycle" required>
+                </div>
+                <div class="form-group">
+                    <label for="ai-notes">Notes (Optional)</label>
+                    <textarea id="ai-notes" class="form-control" rows="4" placeholder="Paste your notes here... The AI will use this as context."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate Flashcards</button>
+                <div id="ai-loading-spinner" style="display: none; margin-top: 1rem;">Generating...</div>
+            </form>
+        </div>
+
+        <div id="create-manual" class="tab-content">
+            <form id="manual-creator-form">
+                <div class="form-group">
+                    <label for="manual-question">Question</label>
+                    <textarea id="manual-question" class="form-control" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="manual-answer">Answer</label>
+                    <textarea id="manual-answer" class="form-control" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Flashcard</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="emoji-picker-modal" class="modal-overlay">
+    <div class="modal-content emoji-picker-content">
+        <h3>Select an Icon</h3>
+        <div id="emoji-grid">
+        </div>
+    </div>
+</div>
+
+<div id="move-item-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Move Item to...</h3>
+        <div id="move-folder-tree">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="cancel-move-btn">Cancel</button>
+            <button class="btn btn-primary" id="confirm-move-btn">Move</button>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fullData = {
+        folders: {{ folder_structure | tojson | safe }},
+        root_flashcards: {{ root_flashcards | tojson | safe }}
+    };
+    let itemToMove = null;
+    let itemToChangeIcon = null;
+    let currentFolderId = null; // Keep track of the current folder
+    let breadcrumbs = [];
+    let selectedItems = [];
+
+    const newFolderBtn = document.getElementById('new-folder-btn');
+    const moveItemModal = document.getElementById('move-item-modal');
+    const moveFolderTreeEl = document.getElementById('move-folder-tree');
+    const confirmMoveBtn = document.getElementById('confirm-move-btn');
+    const cancelMoveBtn = document.getElementById('cancel-move-btn');
+    const newFlashcardBtn = document.getElementById('new-flashcard-btn');
+    const createFlashcardModal = document.getElementById('create-flashcard-modal');;
+    const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
+    const learnModeBtn = document.getElementById('learn-mode-btn'); 
+    const selectLearnFoldersModal = document.getElementById('select-learn-folders-modal');
+    const mobileLearnBtn = document.getElementById('mobile-learn-btn');
+    const startLearnSessionBtn = document.getElementById('start-learn-session-btn');
+
+    const bulkActionBar = document.getElementById('bulk-action-bar');
+    const selectionCountEl = document.getElementById('selection-count');
+    const bulkMoveBtn = document.getElementById('bulk-move-btn');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
+    // DOM elements that are always present
+    const folderTreeEl = document.getElementById('folder-tree');
+    const itemsContainerEl = document.getElementById('items-container');
+    const currentFolderNameEl = document.getElementById('current-folder-name');
+    const cancelLearnSelectionBtn = document.getElementById('cancel-learn-selection-btn');
+    const learnModeModal = document.getElementById('learn-mode-modal');
+    const closeLearnModalBtn = document.getElementById('close-learn-modal');
+
+
+    function renderFolderTree(folders, parentElement, level = 0) {
+        const ul = document.createElement('ul');
+        ul.style.paddingLeft = level > 0 ? '20px' : '0';
+        ul.style.listStyle = 'none';
+
+        folders.forEach(folder => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.id = `folder-link-${folder.id}`;
+            a.href = '#';
+            a.dataset.folderId = folder.id;
+            a.innerHTML = `<span class="folder-icon">${folder.icon}</span> ${folder.name}`;
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateToFolder(folder.id);
+            });
+            li.appendChild(a);
+
+            if (folder.subfolders && folder.subfolders.length > 0) {
+                renderFolderTree(folder.subfolders, li, level + 1);
+            }
+            ul.appendChild(li);
+        });
+        parentElement.appendChild(ul);
+    }
+    
+    function renderMoveFolderTree(folders, parentElement, level = 0) {
+        const ul = document.createElement('ul');
+        if (level > 0) {
+            ul.classList.add('nested');
+        }
+
+        folders.forEach(folder => {
+            if (itemToMove && itemToMove.type === 'folder' && itemToMove.id === folder.id) {
+                return;
+            }
+
+            const li = document.createElement('li');
+            const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'move-folder-item';
+
+            if (hasSubfolders) {
+                const toggleArrow = document.createElement('span');
+                toggleArrow.className = 'toggle-arrow';
+                toggleArrow.innerHTML = '▶';
+                toggleArrow.onclick = (e) => {
+                    e.stopPropagation();
+                    const sublist = li.querySelector('ul');
+                    if (sublist) {
+                        sublist.classList.toggle('open');
+                        toggleArrow.classList.toggle('open');
+                    }
+                };
+                itemDiv.appendChild(toggleArrow);
+            }
+
+            const a = document.createElement('a');
+            a.href = '#';
+            a.dataset.folderId = folder.id;
+            a.innerHTML = `<span class="folder-icon">${folder.icon}</span> ${folder.name}`;
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('#move-folder-tree a').forEach(link => link.classList.remove('active'));
+                a.classList.add('active');
+            });
+            itemDiv.appendChild(a);
+            li.appendChild(itemDiv);
+
+            if (hasSubfolders) {
+                renderMoveFolderTree(folder.subfolders, li, level + 1);
+            }
+
+            ul.appendChild(li);
+        });
+        parentElement.appendChild(ul);
+    }
+
+    function renderLearnFolderTree(folders, parentElement) {
+        const ul = document.createElement('ul');
+        folders.forEach(folder => {
+            const li = document.createElement('li');
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = folder.id;
+            checkbox.id = `learn-check-${folder.id}`;
+            
+            label.setAttribute('for', checkbox.id);
+            label.innerHTML = `<span class="folder-icon">${folder.icon}</span> ${folder.name}`;
+            
+            li.appendChild(checkbox);
+            li.appendChild(label);
+
+            if (folder.subfolders && folder.subfolders.length > 0) {
+                const subUl = document.createElement('ul');
+                renderLearnFolderTree(folder.subfolders, subUl);
+                li.appendChild(subUl);
+            }
+            ul.appendChild(li);
+        });
+        parentElement.appendChild(ul);
+    }
+
+
+
+
+    function renderItems(items) {
+        itemsContainerEl.innerHTML = '';
+        (items.folders || []).forEach(folder => {
+            const folderEl = document.createElement('div');
+            folderEl.className = 'item-card folder-item';
+            folderEl.dataset.itemId = folder.id;
+            folderEl.dataset.itemType = 'folder';
+
+            folderEl.innerHTML = `
+                <div class="item-icon">${folder.icon}</div>
+                <div class="item-name">${folder.name}</div>
+                <div class="item-menu-btn">...</div>
+                <div class="item-menu-dropdown">
+                    <a href="#" class="select-btn">Select</a>
+                    <a href="#" class="rename-btn">Rename</a>
+                    <a href="#" class="change-icon-btn">Change Icon</a>
+                    <a href="#" class="move-btn">Move...</a>
+                    <a href="#" class="delete-btn">Delete</a>
+                </div>
+            `;
+            folderEl.addEventListener('click', (e) => {
+                if (!e.target.closest('.item-menu-btn') && !e.target.closest('.item-menu-dropdown')) {
+                    if (selectedItems.length > 0) {
+                        toggleSelection(folderEl);
+                    } else {
+                        navigateToFolder(folder.id);
+                    }
+                }
+            });
+            itemsContainerEl.appendChild(folderEl);
+        });
+
+        (items.flashcards || []).forEach(flashcard => {
+            const flashcardEl = document.createElement('div');
+            flashcardEl.className = 'item-card flashcard-item';
+            flashcardEl.dataset.itemId = flashcard.id;
+            flashcardEl.dataset.itemType = 'flashcard';
+
+            flashcardEl.innerHTML = `
+                <div class="flashcard-inner">
+                    <div class="item-content flashcard-front">
+                        <div class="item-name">${flashcard.question}</div>
+                    </div>
+                    <div class="item-content flashcard-back">
+                        <p>${flashcard.answer}</p>
+                    </div>
+                </div>
+                <div class="flashcard-footer">
+                    <div class="item-menu-btn">...</div>
+                    <div class="item-menu-dropdown">
+                        <a href="#" class="select-btn">Select</a>
+                        <a href="#" class="rename-btn">Rename</a>
+                        <a href="#" class="move-btn">Move...</a>
+                        <a href="#" class="delete-btn">Delete</a>
+                    </div>
+                </div>
+            `;
+            flashcardEl.addEventListener('click', (e) => {
+                if (!e.target.closest('.item-menu-btn') && !e.target.closest('.item-menu-dropdown')) {
+                    if (selectedItems.length > 0) {
+                        toggleSelection(flashcardEl);
+                    } else {
+                        flashcardEl.classList.toggle('flipped');
+                    }
+                }
+            });
+
+            itemsContainerEl.appendChild(flashcardEl);
+        });
+    }
+
+    function renderBreadcrumbs() {
+        breadcrumbsEl.innerHTML = '';
+        const homeLink = document.createElement('a');
+        homeLink.href = '#';
+        homeLink.innerText = 'All Flashcards';
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToFolder(null);
+        });
+        breadcrumbsEl.appendChild(homeLink);
+
+        breadcrumbs.forEach((crumb, index) => {
+            breadcrumbsEl.innerHTML += ' / ';
+            const crumbLink = document.createElement('a');
+            crumbLink.href = '#';
+            crumbLink.innerText = crumb.name;
+            if (index < breadcrumbs.length - 1) {
+                crumbLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navigateToFolder(crumb.id);
+                });
+            }
+            breadcrumbsEl.appendChild(crumbLink);
+        });
+    }
+
+    function findFolder(folderId, folders = fullData.folders) {
+        for (const folder of folders) {
+            if (folder.id === folderId) return folder;
+            const found = findFolder(folderId, folder.subfolders);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    function buildBreadcrumbs(folderId, folders = fullData.folders, path = []) {
+        for (const folder of folders) {
+            const currentPath = [...path, { id: folder.id, name: folder.name }];
+            if (folder.id === folderId) {
+                return currentPath;
+            }
+            const foundPath = buildBreadcrumbs(folderId, folder.subfolders, currentPath);
+            if (foundPath) return foundPath;
+        }
+        return null;
+    }
+
+    function navigateToFolder(folderId) {
+        currentFolderId = folderId;
+        clearSelection();
+        if (folderId === null) {
+            currentFolderNameEl.innerText = 'All Flashcards';
+            breadcrumbs = [];
+            renderItems({ folders: fullData.folders, flashcards: fullData.root_flashcards });
+        } else {
+            const folder = findFolder(folderId);
+            if (folder) {
+                currentFolderNameEl.innerText = folder.name;
+                breadcrumbs = buildBreadcrumbs(folderId);
+                renderItems({ folders: folder.subfolders, flashcards: folder.flashcards });
+            }
+        }
+        renderBreadcrumbs();
+
+        document.querySelectorAll('#folder-tree a').forEach(a => a.classList.remove('active'));
+        if (folderId) {
+            const activeLink = document.getElementById(`folder-link-${folderId}`);
+            if (activeLink) activeLink.classList.add('active');
+        }
+    }
+
+    newFolderBtn.addEventListener('click', async () => {
+        const name = prompt('Enter new folder name:');
+        if (name && name.trim()) {
+            try {
+                const response = await fetch('{{ url_for("create_folder") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name.trim(), parent_id: currentFolderId })
+                });
+                if (!response.ok) throw new Error('Failed to create folder.');
+                
+                const newFolder = await response.json();
+                
+                const newFolderData = { ...newFolder, subfolders: [], flashcards: [] };
+                if (currentFolderId === null) {
+                    fullData.folders.push(newFolderData);
+                } else {
+                    const parent = findFolder(currentFolderId);
+                    parent.subfolders.push(newFolderData);
+                }
+                
+                folderTreeEl.innerHTML = '';
+                renderFolderTree(fullData.folders, folderTreeEl);
+                navigateToFolder(currentFolderId);
+
+            } catch (error) {
+                console.error(error);
+                alert('Error creating folder.');
+            }
+        }
+    });
+
+
+    document.getElementById('close-create-modal').addEventListener('click', () => {
+        createFlashcardModal.classList.remove('visible');
+    });
+
+    // Also handle clicking on the overlay to close
+    createFlashcardModal.addEventListener('click', (e) => {
+        if (e.target === createFlashcardModal) {
+            createFlashcardModal.classList.remove('visible');
+        }
+    });
+
+    function toggleSelection(cardElement) {
+        const itemId = cardElement.dataset.itemId;
+        const itemType = cardElement.dataset.itemType;
+        const isSelected = cardElement.classList.toggle('selected');
+
+        if (isSelected) {
+            selectedItems.push({ id: itemId, type: itemType });
+        } else {
+            selectedItems = selectedItems.filter(item => item.id !== itemId);
+        }
+        updateBulkActionBar();
+    }
+
+    function updateBulkActionBar() {
+        const count = selectedItems.length;
+        if (count > 0) {
+            selectionCountEl.textContent = `${count} item${count > 1 ? 's' : ''} selected`;
+            bulkActionBar.classList.add('visible');
+            newFlashcardBtn.style.display = 'none';
+            learnModeBtn.style.display = 'none';
+            cancelSelectionBtn.style.display = 'inline-flex';
+        } else {
+            bulkActionBar.classList.remove('visible');
+            newFlashcardBtn.style.display = 'inline-flex';
+            learnModeBtn.style.display = 'inline-flex';
+            cancelSelectionBtn.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        selectedItems = [];
+        document.querySelectorAll('.item-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        updateBulkActionBar();
+    }
+
+    bulkCancelBtn.addEventListener('click', clearSelection);
+    cancelSelectionBtn.addEventListener('click', clearSelection);
+
+
+    itemsContainerEl.addEventListener('click', function(e) {
+        const target = e.target; 
+
+        if (target.classList.contains('item-menu-btn')) {
+            e.stopPropagation();
+            document.querySelectorAll('.item-card.menu-open').forEach(card => {
+                if (card !== target.closest('.item-card')) { // Close other menus
+                    card.classList.remove('menu-open');
+                    card.querySelector('.item-menu-dropdown').classList.remove('visible');
+                }
+            });
+            target.closest('.item-card').classList.toggle('menu-open'); // Open/close current menu
+            target.nextElementSibling.classList.toggle('visible'); // Show/hide dropdown
+        }
+
+        if (target.classList.contains('move-btn')) {
+            e.stopPropagation();
+            e.preventDefault();
+            const card = target.closest('.item-card');
+            itemToMove = {
+                id: card.dataset.itemId,
+                type: card.dataset.itemType
+            };
+            openMoveModal();
+        }
+
+        if (target.classList.contains('select-btn')) {
+            e.stopPropagation();
+            e.preventDefault();
+            const card = target.closest('.item-card');
+            // Enter selection mode and select the current item
+            toggleSelection(card);
+            // Hide the menu
+            target.closest('.item-menu-dropdown').classList.remove('visible');
+        }
+
+        if (target.classList.contains('rename-btn')) {
+            e.stopPropagation();
+            e.preventDefault();
+            const card = target.closest('.item-card');
+            const itemId = card.dataset.itemId;
+            const itemType = card.dataset.itemType;
+            const currentName = card.querySelector('.item-name').innerText;
+            const newName = prompt(`Enter new name for "${currentName}":`, currentName);
+
+            if (newName && newName.trim() !== currentName) {
+                fetch('{{ url_for("update_item") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId, item_type: itemType, name: newName.trim() })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        window.location.reload();
+                    }
+                });
+            }
+        }
+
+        if (target.classList.contains('change-icon-btn')) {
+            e.stopPropagation();
+            e.preventDefault();
+            const card = target.closest('.item-card');
+            itemToChangeIcon = {
+                id: card.dataset.itemId
+            };
+            openEmojiPicker();
+        }
+
+        if (target.classList.contains('delete-btn')) {
+            e.stopPropagation();
+            e.preventDefault();
+            const card = target.closest('.item-card');
+            const itemId = card.dataset.itemId;
+            const itemType = card.dataset.itemType;
+            const itemName = card.querySelector('.item-name').innerText;
+
+            if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+                fetch('{{ url_for("delete_item") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId, item_type: itemType })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        card.remove();
+                    } else {
+                        alert(data.error || 'Failed to delete item.');
+                    }
+                });
+            }
+        }
+    });
+
+    bulkMoveBtn.addEventListener('click', () => {
+        itemToMove = null; // Ensure single-item move is cleared
+        openMoveModal();
+    });
+
+    bulkDeleteBtn.addEventListener('click', async () => {
+        const count = selectedItems.length;
+        if (count === 0) return;
+
+        if (confirm(`Are you sure you want to delete ${count} item${count > 1 ? 's' : ''}? This action cannot be undone.`)) {
+            try {
+                const response = await fetch('{{ url_for("delete_items_bulk") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: selectedItems })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    selectedItems.forEach(item => {
+                        const card = document.querySelector(`[data-item-id='${item.id}'][data-item-type='${item.type}']`);
+                        if (card) card.remove();
+                    });
+                    clearSelection();
+                } else {
+                    alert('Error: ' + (data.error || 'Could not delete items.'));
+                }
+            } catch (error) {
+                console.error('Bulk Delete Error:', error);
+                alert('An error occurred during bulk deletion.');
+            }
+        }
+    });
+
+    function openMoveModal() {
+        moveFolderTreeEl.innerHTML = '';
+        const rootLink = document.createElement('a');
+        rootLink.href = '#';
+        rootLink.dataset.folderId = 'null';
+        rootLink.innerHTML = `🏠 All Flashcards (Root)`;
+        rootLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelectorAll('#move-folder-tree a').forEach(link => link.classList.remove('active'));
+            rootLink.classList.add('active');
+        });
+        moveFolderTreeEl.appendChild(rootLink);
+    
+        renderMoveFolderTree(fullData.folders, moveFolderTreeEl);
+        moveItemModal.classList.add('visible');
+    }
+
+    confirmMoveBtn.addEventListener('click', async () => {
+        const selectedLink = moveFolderTreeEl.querySelector('a.active');
+        if (!selectedLink) return;
+        const targetFolderId = selectedLink.dataset.folderId === 'null' ? null : parseInt(selectedLink.dataset.folderId);
+        
+        const items = itemToMove ? [{ id: itemToMove.id, type: itemToMove.type }] : selectedItems;
+        const endpoint = itemToMove ? '{{ url_for("move_item") }}' : '{{ url_for("move_items_bulk") }}';
+        const body = itemToMove 
+            ? { item_id: itemToMove.id, item_type: itemToMove.type, target_folder_id: targetFolderId }
+            : { items: items, target_folder_id: targetFolderId };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) throw new Error('Failed to move item.');
+            
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            alert('Error moving item.');
+        }
+    });
+
+    cancelMoveBtn.addEventListener('click', () => {
+        moveItemModal.classList.remove('visible');
+        clearSelection(); // Clear selection when cancelling
+        itemToMove = null;
+    });
+
+    moveItemModal.addEventListener('click', (e) => {
+        if (e.target === moveItemModal) {
+            moveItemModal.classList.remove('visible');
+            itemToMove = null;
+            clearSelection(); // Clear selection when clicking background to hide the action bar
+        }
+    });
+
+
+    let learnSession = {
+        flashcards: [],
+        currentIndex: 0,
+        correct: 0,
+        incorrect: 0
+    };
+
+    // Event listeners for learn and create buttons
+    learnModeBtn.addEventListener('click', () => {
+        const treeContainer = document.getElementById('select-learn-folders-tree');
+        treeContainer.innerHTML = '';
+        renderLearnFolderTree(fullData.folders, treeContainer);
+        selectLearnFoldersModal.classList.add('visible');
+    });
+    mobileLearnBtn.addEventListener('click', () => {
+        learnModeBtn.click(); // Re-use the same logic as the desktop learn button
+    });
+
+    newFlashcardBtn.addEventListener('click', () => {
+        createFlashcardModal.classList.add('visible');
+    });
+
+    // --- Mobile FAB (Speed Dial) Logic ---
+    const fabContainer = document.querySelector('.fab-container');
+    const mobileAddBtn = document.getElementById('mobile-add-btn');
+    const fabNewFlashcardBtn = document.getElementById('fab-new-flashcard');
+    const fabNewFolderBtn = document.getElementById('fab-new-folder');
+
+    mobileAddBtn.addEventListener('click', () => {
+        fabContainer.classList.toggle('open');
+    });
+    fabNewFlashcardBtn.addEventListener('click', () => {
+        newFlashcardBtn.click(); // Reuse desktop logic
+    });
+    fabNewFolderBtn.addEventListener('click', () => {
+        newFolderBtn.click(); // Reuse desktop logic
+    });
+
+    cancelLearnSelectionBtn.addEventListener('click', () => {
+        selectLearnFoldersModal.classList.remove('visible');
+    });
+
+    closeLearnModalBtn.addEventListener('click', () => {
+        learnModeModal.classList.remove('visible');
+    });
+
+    startLearnSessionBtn.addEventListener('click', async () => {
+        const selectedCheckboxes = document.querySelectorAll('#select-learn-folders-tree input[type="checkbox"]:checked');
+        const folderIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (folderIds.length === 0) {
+            alert('Please select at least one folder to learn.');
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ url_for("get_learn_session_flashcards") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder_ids: folderIds })
+            });
+            const data = await response.json();
+
+            if (data.flashcards && data.flashcards.length > 0) {
+                learnSession.flashcards = data.flashcards.sort(() => Math.random() - 0.5);
+                learnSession.currentIndex = 0;
+                learnSession.correct = 0;
+                learnSession.incorrect = 0;
+                
+                selectLearnFoldersModal.classList.remove('visible');
+                learnModeModal.classList.add('visible');
+                displayCurrentLearnCard();
+            } else {
+                alert('The selected folders do not contain any flashcards.');
+            }
+        } catch (error) {
+            console.error('Error starting learn session:', error);
+            alert('Could not start the learning session.');
+        }
+    });
+
+    function displayCurrentLearnCard() {
+        if (learnSession.currentIndex >= learnSession.flashcards.length) {
+            alert(`Session Complete!\n\nCorrect: ${learnSession.correct}\nIncorrect: ${learnSession.incorrect}`);
+            learnModeModal.classList.remove('visible');
+            return;
+        }
+
+        const card = learnSession.flashcards[learnSession.currentIndex];
+        document.getElementById('learn-question').textContent = card.question;
+        document.getElementById('learn-answer').textContent = card.answer;
+        document.getElementById('learn-progress').textContent = `${learnSession.currentIndex + 1} / ${learnSession.flashcards.length}`;
+        
+        learnModeModal.querySelector('.learn-modal-content').classList.remove('flipped');
+        document.getElementById('learn-feedback-btns').style.display = 'none';
+
+        setTimeout(() => {
+            if (learnModeModal.querySelector('.learn-modal-content').classList.contains('flipped')) {
+                document.getElementById('learn-feedback-btns').style.display = 'flex';
+            }
+        }, 1000);
+
+        learnModeModal.querySelector('.learn-flashcard').onclick = () => {
+            learnModeModal.querySelector('.learn-modal-content').classList.toggle('flipped');
+            if (learnModeModal.querySelector('.learn-modal-content').classList.contains('flipped')) {
+                document.getElementById('learn-feedback-btns').style.display = 'flex';
+            } else {
+                document.getElementById('learn-feedback-btns').style.display = 'none';
+            }
+        };
+    }
+
+    async function recordAndProceed(wasCorrect) {
+        const cardId = learnSession.flashcards[learnSession.currentIndex].id;
+        if (wasCorrect) learnSession.correct++;
+        else learnSession.incorrect++;
+
+        await fetch('{{ url_for("record_learn_attempt") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ flashcard_id: cardId, was_correct: wasCorrect })
+        });
+
+        learnSession.currentIndex++;
+        displayCurrentLearnCard();
+    }
+
+    document.getElementById('learn-right-btn').addEventListener('click', () => recordAndProceed(true));
+    document.getElementById('learn-wrong-btn').addEventListener('click', () => recordAndProceed(false));
+
+    const aiGeneratorForm = document.getElementById('ai-generator-form');
+    const aiLoadingSpinner = document.getElementById('ai-loading-spinner');
+
+    aiGeneratorForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        aiLoadingSpinner.style.display = 'block';
+
+        const topic = document.getElementById('ai-topic').value;
+        const notes = document.getElementById('ai-notes').value;
+        const text = notes || topic;
+
+        try {
+            const genResponse = await fetch('{{ url_for("generate_flashcards_ai") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, topic: topic })
+            });
+
+            if (!genResponse.ok) throw new Error('AI generation failed.');
+            
+            const data = await genResponse.json();
+            const generatedFlashcards = data.flashcards.map(fc => ({ ...fc, topic: topic }));
+
+            const saveResult = await saveFlashcards(generatedFlashcards, currentFolderId);
+            if (saveResult) {
+                generatedFlashcards.forEach(fc => {
+                    addFlashcardToDOM(fc);
+                    if (currentFolderId === null) {
+                        fullData.root_flashcards.push(fc);
+                    } else {
+                        findFolder(currentFolderId).flashcards.push(fc);
+                    }
+                });
+                aiGeneratorForm.reset();
+                createFlashcardModal.classList.remove('visible');
+            }
+        } catch (error) {
+            console.error('AI Generation Error:', error);
+            alert('Failed to generate flashcards with AI. Please try again.');
+        } finally {
+            aiLoadingSpinner.style.display = 'none';
+        }
+    });
+
+    async function saveFlashcards(flashcards, folderId) {
+        try {
+            const response = await fetch('{{ url_for("save_flashcards") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ flashcards: flashcards, folder_id: folderId })
+            });
+            if (!response.ok) throw new Error('Failed to save flashcards.');
+            const result = await response.json();
+            window.location.reload(); 
+            return result;
+        } catch (error) {
+            console.error('Save Error:', error);
+            alert('Could not save flashcards. Please try again.');
+        }
+    }
+
+    function openEmojiPicker() {
+        const emojiModal = document.getElementById('emoji-picker-modal');
+        const emojiGrid = document.getElementById('emoji-grid');
+        const EMOJI_CATEGORIES = {
+            'School & Science': ['📚', '🧪', '🔬', '🧮', '📜', '💡', '🧠', '✍️', '📈', '🧬'],
+            'General': ['📁', '⭐', '🎯', '🔥', '✅', '❌', '📌', '📎', '💬', '❓', '❗'],
+            'Nature': ['🌍', '🌿', '🌳', '🌊', '☀️', '🌙', '🌸', '🍁', '🍄', '🐚'],
+            'Animals': ['🐶', '🐱', '🐭', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'],
+            'Food': ['🍎', '🍌', '🍇', '🍓', '🍔', '🍕', '🍟', '🍩', '🍪', '🍦']
+        };
+        
+        emojiGrid.innerHTML = '';
+        for (const category in EMOJI_CATEGORIES) {
+            const categoryHeader = document.createElement('div');
+            categoryHeader.className = 'emoji-category-header';
+            categoryHeader.textContent = category;
+            emojiGrid.appendChild(categoryHeader);
+
+            EMOJI_CATEGORIES[category].forEach(emoji => {
+                const emojiBtn = document.createElement('button');
+                emojiBtn.className = 'emoji-btn';
+                emojiBtn.textContent = emoji;
+                emojiBtn.onclick = () => selectEmoji(emoji);
+                emojiGrid.appendChild(emojiBtn);
+            });
+        }
+
+        emojiModal.classList.add('visible');
+        emojiModal.onclick = (e) => {
+            if (e.target === emojiModal) {
+                emojiModal.classList.remove('visible');
+            }
+        };
+    }
+
+    function selectEmoji(emoji) {
+        if (itemToChangeIcon) {
+            updateItemIcon(itemToChangeIcon.id, emoji);
+        }
+        document.getElementById('emoji-picker-modal').classList.remove('visible');
+    }
+
+    async function updateItemIcon(itemId, newIcon) {
+        try {
+            const response = await fetch('{{ url_for("update_item") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId, item_type: 'folder', icon: newIcon })
+            });
+            if (!response.ok) throw new Error('Failed to update icon.');
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            alert('Error updating icon.');
+        }
+    }
+
+    const creatorTabs = document.querySelector('.creator-tabs');
+    creatorTabs.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-link')) {
+            const tabId = e.target.dataset.tab;
+
+            creatorTabs.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+            e.target.classList.add('active');
+
+            document.querySelectorAll('#create-flashcard-modal .tab-content').forEach(content => {
+                content.style.display = content.id === tabId ? 'block' : 'none';
+            });
+        }
+    });
+
+    const manualCreatorForm = document.getElementById('manual-creator-form');
+    manualCreatorForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const question = document.getElementById('manual-question').value;
+        const answer = document.getElementById('manual-answer').value;
+
+        let topic = "General";
+        if (currentFolderId) {
+            const parentFolder = findFolder(currentFolderId);
+            if (parentFolder) {
+                topic = parentFolder.name;
+            }
+        }
+
+        const newFlashcard = { topic: topic, question, answer };
+
+        const saveResult = await saveFlashcards([newFlashcard], currentFolderId);
+        if (saveResult) {
+            addFlashcardToDOM(newFlashcard);
+            if (currentFolderId === null) {
+                fullData.root_flashcards.push(newFlashcard);
+            } else {
+                findFolder(currentFolderId).flashcards.push(newFlashcard);
+            }
+            manualCreatorForm.reset();
+            createFlashcardModal.classList.remove('visible');
+        }
+    });
+
+    // --- Mobile View Switcher Logic ---
+    const viewSwitcher = document.querySelector('.mobile-view-switcher');
+    viewSwitcher.addEventListener('click', (e) => {
+        if (e.target.classList.contains('view-switch-btn')) {
+            const view = e.target.dataset.view;
+            
+            viewSwitcher.querySelectorAll('.view-switch-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+    
+            const itemsView = document.getElementById('items-container');
+            const foldersView = document.getElementById('folder-tree');
+            const sidebar = document.querySelector('.flashcards-sidebar');
+    
+            itemsView.style.display = view === 'items' ? 'grid' : 'none';
+            foldersView.style.display = view === 'folders' ? 'block' : 'none';
+            sidebar.style.display = view === 'folders' ? 'block' : 'none';
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.item-menu-btn') && !e.target.closest('.item-menu-dropdown')) {
+            document.querySelectorAll('.item-card.menu-open').forEach(card => {
+                card.classList.remove('menu-open');
+                card.querySelector('.item-menu-dropdown').classList.remove('visible');
+            });
+        }
+    });
+
+    function initialize() {
+        folderTreeEl.innerHTML = '';
+        renderFolderTree(fullData.folders, folderTreeEl);
+        navigateToFolder(null); // Start at the root
+    }
+
+    initialize();
+});
+</script>
+{% endblock %}

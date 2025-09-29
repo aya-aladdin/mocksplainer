@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Test: {{ test.topic }}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='take_test.css') }}">
+    <style>
+        .question-text { white-space: pre-wrap; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container narrow">
+    <div class="dashboard-header" style="margin-bottom: 1rem;">
+                <h1>Test: {{ test.topic }}</h1>
+                <p class="muted">Generated on {{ test.timestamp.strftime('%d %B %Y') }}</p>
+            </div>
+            <div class="test-paper">
+                {% for q in test.questions|sort(attribute='question_number') %}
+                <div class="question-block" id="question-{{ q.id }}" data-question-text="{{ q.question_text }}">
+                    <div class="question-content">
+                        <div class="question-header">
+                            <h4>Question {{ q.question_number }}</h4>
+                            <span class="marks-label">[{{ q.marks }} marks]</span>
+                        </div>
+                        <div class="question-text">{{ q.question_text | markdown | safe }}</div>
+                    </div>
+                    <div class="answer-content">
+                        <textarea class="form-control" rows="8" placeholder="Your answer..." data-question-id="{{ q.id }}"></textarea>
+                        <div class="mark-scheme" style="display: none;">
+                            <h5>Model Answer</h5>
+                            <div class="model-answer-text">{{ q.model_answer | markdown | safe }}</div>
+                            
+                            <h5 style="margin-top: 1rem;">Mark Scheme Criteria</h5>
+                            <div class="mark-scheme-criteria">{{ q.answer_text | markdown | safe }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="test-submission-area">
+                <button id="submit-test-btn" class="btn btn-primary">Submit & View Mark Scheme</button>
+            </div>
+        </div>
+</div>
+
+<!-- Pop-up button for AI Helper -->
+<button id="ask-ai-popup" class="btn btn-secondary btn-sm" style="display: none; position: absolute;">Ask AI for help</button>
+
+<!-- AI Helper Sidebar -->
+<div id="ai-helper-sidebar" class="ai-helper-sidebar">
+    <div class="ai-helper-header">
+        <h3>AI Helper</h3>
+        <button id="close-ai-helper" class="btn btn-ghost btn-sm">&times;</button>
+    </div>
+    <div class="ai-helper-chat-container">
+        <div id="ai-helper-messages">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <form id="ai-helper-form">
+            <input type="text" id="ai-helper-input" placeholder="Ask a follow-up question..." autocomplete="off">
+            <button type="submit" id="ai-helper-send-btn" title="Send">➤</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Render math in the entire body, which covers questions and the AI helper
+    renderMathInElement(document.body, {
+        delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+        ]
+    });
+
+    const askAiPopup = document.getElementById('ask-ai-popup');
+    const aiHelperSidebar = document.getElementById('ai-helper-sidebar');
+    const closeAiHelperBtn = document.getElementById('close-ai-helper');
+    const aiHelperForm = document.getElementById('ai-helper-form');
+    const aiHelperInput = document.getElementById('ai-helper-input');
+    const aiHelperMessages = document.getElementById('ai-helper-messages');
+    let currentQuestionContext = '';
+    let conversationHistory = [];
+
+    document.addEventListener('selectionchange', () => {
+        const selection = window.getSelection();
+        if (selection.toString().trim() !== '' && selection.anchorNode.parentElement.closest('.question-text')) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            askAiPopup.style.top = `${window.scrollY + rect.bottom + 5}px`;
+            askAiPopup.style.left = `${window.scrollX + rect.left}px`;
+            askAiPopup.style.display = 'inline-flex';
+        } else {
+            askAiPopup.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', () => {
+        if (window.getSelection().toString().trim() === '') {
+            askAiPopup.style.display = 'none';
+        }
+    });
+
+    askAiPopup.addEventListener('click', () => {
+        const selection = window.getSelection();
+        const questionBlock = selection.anchorNode.parentElement.closest('.question-block');
+        if (questionBlock) {
+            currentQuestionContext = questionBlock.dataset.questionText;
+            const selectedText = selection.toString();
+            
+            aiHelperSidebar.classList.add('open');
+            aiHelperMessages.innerHTML = '';
+            conversationHistory = [];
+
+            const initialPrompt = `In the context of the question: "${currentQuestionContext}", please explain the following part I've highlighted: "${selectedText}"`;
+            
+            sendMessageToAI(initialPrompt, true);
+        }
+        askAiPopup.style.display = 'none';
+    });
+
+    closeAiHelperBtn.addEventListener('click', () => {
+        aiHelperSidebar.classList.remove('open');
+    });
+
+    aiHelperForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const userMessage = aiHelperInput.value.trim();
+        if (userMessage) {
+            appendHelperMessage('user', userMessage);
+            sendMessageToAI(userMessage);
+            aiHelperInput.value = '';
+        }
+    });
+
+    async function sendMessageToAI(message, isInitial = false) {
+        if (isInitial) {
+            conversationHistory.push({ role: 'user', content: message });
+        } else {
+            conversationHistory.push({ role: 'user', content: message });
+        }
+
+        try {
+            const response = await fetch("{{ url_for('chat') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: conversationHistory })
+            });
+            if (!response.ok) throw new Error('AI response failed.');
+            const data = await response.json();
+            appendHelperMessage('bot', data.reply);
+            conversationHistory.push({ role: 'assistant', content: data.reply });
+        } catch (error) {
+            console.error('AI Helper Error:', error);
+            appendHelperMessage('bot', 'Sorry, I encountered an error. Please try again.');
+        }
+    }
+
+    function appendHelperMessage(sender, text) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        
+        if (sender === 'bot') {
+            const avatar = '<div class="bot-avatar">✨</div>';
+            messageElement.innerHTML = avatar + '<div class="message-content">' + marked.parse(text) + '</div>'; 
+        } else {
+            const avatar = '<div class="user-avatar">{{ current_user.username[0] | upper }}</div>';
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = text;
+            messageElement.innerHTML = avatar;
+            messageElement.appendChild(messageContent);
+        }
+
+        messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+        aiHelperMessages.appendChild(messageElement);
+
+        aiHelperMessages.scrollTop = aiHelperMessages.scrollHeight;
+    }
+
+    const submitButton = document.getElementById('submit-test-btn');
+    submitButton.addEventListener('click', () => {
+        // Reveal all mark schemes and hide textareas
+        document.querySelectorAll('.question-block').forEach(block => {
+            const textarea = block.querySelector('textarea');
+            const markScheme = block.querySelector('.mark-scheme');
+            if (textarea) textarea.style.display = 'none';
+            if (markScheme) markScheme.style.display = 'block';
+        });
+
+        // Update the button to show it's been submitted
+        submitButton.textContent = 'Test Submitted';
+        submitButton.disabled = true;
+    });
+});
+</script>
+{% endblock %}

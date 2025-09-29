@@ -1,0 +1,61 @@
+@import url('flashcards.css');
+
+.test-list-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.test-list-item .activity-link {
+    flex-grow: 1;
+}
+
+.test-list-item .item-menu-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 1;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.test-list-item:hover .item-menu-btn {
+    background-color: #f3f4f6;
+}
+
+.test-list-item .item-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--panel);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    z-index: 10;
+    width: 120px;
+    padding: 8px 0;
+}
+
+.test-list-item .item-menu-dropdown.visible {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .flashcards-main-header .actions {
+        display: flex;
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
