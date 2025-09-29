@@ -1,31 +1,24 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import Header from '@/components/ui/Header';
-import Footer from '@/components/ui/Footer';
+import type { Metadata } from "next";
+import { Inter, Kanit } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const kanit = Kanit({ subsets: ["latin"], weight: ['400', '600', '700'], variable: '--font-kanit' });
 
 export const metadata: Metadata = {
-  title: 'IGCSE Prep',
-  description: 'Your ultimate IGCSE preparation platform.',
+  title: "Mocksplainer",
+  description: "AI-Powered Study Tools",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} antialiased bg-background text-foreground`}>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            {children}
-          </main>
-          <Footer />
-        </div>
+    <html lang="en">
+      <body
+        className={`${inter.variable} ${kanit.variable} bg-bg-main font-sans text-ink antialiased`}
+      >
+        {children}
       </body>
     </html>
   );
