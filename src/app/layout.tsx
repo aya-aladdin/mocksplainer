@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Kanit } from "next/font/google";
 import Navbar from "./Navbar";
 import "./globals.css";
+import "katex/dist/katex.min.css"; // Add this line
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const kanit = Kanit({ subsets: ["latin"], weight: ['400', '600', '700'], variable: '--font-kanit' });
