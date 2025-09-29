@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Kanit } from "next/font/google";
+import Navbar from "./Navbar";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
@@ -16,9 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${kanit.variable} bg-bg-main font-sans text-ink antialiased`}>
-        {children}
+    <html lang="en" className="bg-ink">
+      <body
+        className={`${inter.variable} ${kanit.variable} bg-panel font-sans text-ink antialiased`}
+      >
+        <div className="flex min-h-screen flex-col">
+          <Navbar />
+          {children}
+        </div>
       </body>
     </html>
   );

@@ -76,25 +76,19 @@ export default function LandingPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-white/70 px-5 py-1.5 backdrop-blur-md backdrop-saturate-125">
-        <div className="flex items-center gap-2 text-xl font-medium text-ink">
-          <span>IGCSE MockSplainer</span>
-        </div>
-        <Link href="/login" className="rounded border border-gray-300 px-2.5 py-1 text-sm text-ink hover:bg-gray-100">Sign In</Link>
-      </header>
 
       <main>
         <div className="relative">
-          <div className="sticky top-0 grid h-[60vh] place-items-center text-center">
-            <div className="container px-4 md:px-0" style={heroStyle}>
-              <h1 className="text-5xl font-bold max-w-3xl mx-auto">Exam-specific revision,<br />made by trusted examiners</h1>
+          <div className="sticky top-0 flex h-[60vh] flex-col items-center justify-center bg-panel text-center text-ink" style={heroStyle}>
+            <div className="container px-4">
+              <h1 className="text-5xl font-bold">Exam-specific revision,<br />made by trusted examiners</h1>
               <p className="text-muted">Real expertise. Real results. On average, our resources help students go up 2 grades.</p>
               <div className="mt-4 flex flex-col items-center gap-3">
-                <div className="relative flex w-full max-w-md items-center rounded-xl border border-white/70 bg-white/50 shadow-lg backdrop-blur-sm">
-                  <input type="email" className="flex-grow bg-transparent py-4 pl-4 pr-36 focus:outline-none" placeholder="Enter your email" />
-                  <Link href="/register" className="absolute right-2 rounded-lg bg-accent px-6 py-2 font-semibold text-white shadow-ring hover:bg-accent-hover">Get Started</Link>
+                <div className="relative flex w-full max-w-md items-center rounded-xl border border-border bg-gray-100/50 shadow-inner">
+                  <input type="email" className="flex-grow bg-transparent py-4 pl-4 pr-36 text-ink placeholder-gray-500 focus:outline-none" placeholder="Enter your email" />
+                  <Link href="/profile" className="absolute right-2 rounded-lg bg-accent px-6 py-2 font-semibold text-white shadow-ring hover:bg-accent-hover">Get Started</Link>
                 </div>
-                <Link href="/chatbot" className="rounded-lg border border-gray-300 bg-transparent px-6 py-3 font-semibold hover:bg-gray-100">Try our AI</Link>
+                <Link href="/chatbot" className="rounded-lg border border-gray-300 bg-transparent px-6 py-3 font-semibold text-ink hover:bg-gray-100">Try our AI</Link>
               </div>
             </div>
           </div>
@@ -224,7 +218,7 @@ export default function LandingPage() {
                     {/* Footer Columns */}
                     <div>
                         <h4 className="font-bold text-panel">Home</h4>
-                        <ul><li><Link href="/">Home</Link></li><li><Link href="/register">Resources</Link></li></ul>
+                        <ul><li><Link href="/">Home</Link></li><li><Link href="/profile">Resources</Link></li></ul>
                     </div>
                     <div>
                         <h4 className="font-bold text-panel">Resources</h4>
@@ -232,7 +226,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                         <h4 className="font-bold text-panel">Members</h4>
-                        <ul><li><Link href="/login">Log in</Link></li></ul>
+                        <ul><li><Link href="/profile">My Profile</Link></li></ul>
                     </div>
                     <div>
                         <h4 className="font-bold text-panel">Company</h4>
@@ -240,7 +234,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                         <h4 className="font-bold text-panel">Subjects</h4>
-                        <ul><li><Link href="/register">Biology</Link></li><li><Link href="/register">Chemistry</Link></li><li><Link href="/register">Physics</Link></li></ul>
+                        <ul><li><Link href="/tests">Biology</Link></li><li><Link href="/tests">Chemistry</Link></li><li><Link href="/tests">Physics</Link></li></ul>
                     </div>
                     <div>
                         <h4 className="font-bold text-panel">Follow us</h4>
